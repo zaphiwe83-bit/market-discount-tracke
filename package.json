@@ -1,17 +1,1 @@
-{
-  “name”: “market-discount-tracker”,
-  “version”: “1.0.0”,
-  “private”: true,
-  “description”: “Live discount and market tracking PWA”,
-  “main”: “server.js”,
-  “scripts”: {
-    “start”: “node server.js”
-  },
-  “engines”: {
-    “node”: “>=20”
-   }
-} 
-cd /root/market-discount-tracker
-git add package.json
-git commit -m "Fix package.json JSON syntax
-git push
+
