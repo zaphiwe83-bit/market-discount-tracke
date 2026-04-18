@@ -1,0 +1,272 @@
+:root {
+  --bg: #f6f6f4;
+  --panel: #ffffff;
+  --text: #151515;
+  --muted: #6f6f6c;
+  --line: #dcdcd7;
+  --accent: #0a6847;
+  --accent-soft: #dff5ec;
+  --up: #0a6847;
+  --down: #ba2f2f;
+}
+
+:root.dark {
+  --bg: #101111;
+  --panel: #171919;
+  --text: #efefeb;
+  --muted: #a0a39c;
+  --line: #2a2d2d;
+  --accent: #89d5b5;
+  --accent-soft: #1d2a24;
+  --up: #83e3b9;
+  --down: #ff8d8d;
+}
+
+•	{
+  Box-sizing: border-box;
+}
+
+Body {
+  Margin: 0;
+  Font-family: “DM Sans”, “Segoe UI”, sans-serif;
+  Background: radial-gradient(circle at top right, #dfe8dc 0, transparent 36%), var(--bg);
+  Color: var(--text);
+}
+
+A {
+  Color: var(--accent);
+}
+
+.app-shell {
+  Width: min(1050px, 92vw);
+  Margin: 2rem auto 3rem;
+}
+
+.topbar {
+  Display: flex;
+  Justify-content: space-between;
+  Align-items: end;
+  Gap: 1rem;
+}
+
+.eyebrow {
+  Margin: 0;
+  Letter-spacing: 0.08em;
+  Text-transform: uppercase;
+  Font-size: 0.75rem;
+  Color: var(--muted);
+}
+
+H1 {
+  Margin: 0.35rem 0 0;
+  Font-size: clamp(1.5rem, 3.2vw, 2rem);
+}
+
+.ghost-btn,
+.solid-btn {
+  Border: 1px solid var(--line);
+  Border-radius: 999px;
+  Padding: 0.5rem 1rem;
+  Cursor: pointer;
+}
+
+.ghost-btn {
+  Background: var(--panel);
+  Color: var(--text);
+}
+
+.solid-btn {
+  Background: var(--accent);
+  Border-color: var(--accent);
+  Color: #fff;
+}
+
+.controls {
+  Margin-top: 1.3rem;
+  Display: grid;
+  Gap: 0.8rem;
+}
+
+.search-wrap input,
+.watchlist-form input {
+  Width: 100%;
+  Border: 1px solid var(--line);
+  Background: var(--panel);
+  Color: var(--text);
+  Border-radius: 0.8rem;
+  Padding: 0.82rem 0.95rem;
+  Outline: none;
+}
+
+.watchlist-form {
+  Display: grid;
+  Grid-template-columns: 1fr auto;
+  Gap: 0.55rem;
+}
+
+.watchlist-status {
+  Color: var(--muted);
+  Font-size: 0.9rem;
+  Min-height: 1.2rem;
+}
+
+.watchlist-status.error {
+  Color: var(--down);
+}
+
+.chips {
+  Display: flex;
+  Flex-wrap: wrap;
+  Gap: 0.45rem;
+}
+
+.chip {
+  Border: 1px solid var(--line);
+  Background: var(--panel);
+  Color: var(--text);
+  Border-radius: 999px;
+  Padding: 0.35rem 0.7rem;
+  Cursor: pointer;
+  Font-size: 0.82rem;
+}
+
+.chip-muted {
+  Color: var(--muted);
+  Cursor: default;
+}
+
+.tabs {
+  Display: flex;
+  Gap: 0.55rem;
+  Flex-wrap: wrap;
+}
+
+.tab {
+  Border: 1px solid var(--line);
+  Background: var(--panel);
+  Color: var(--text);
+  Border-radius: 999px;
+  Padding: 0.4rem 0.9rem;
+  Cursor: pointer;
+}
+
+.tab.is-active {
+  Border-color: var(--accent);
+  Color: var(--accent);
+  Background: var(--accent-soft);
+}
+
+.stats {
+  Display: grid;
+  Grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  Gap: 0.6rem;
+  Margin: 1rem 0 0.9rem;
+}
+
+.stat {
+  Border: 1px solid var(--line);
+  Border-radius: 0.9rem;
+  Padding: 0.7rem 0.8rem;
+  Background: var(--panel);
+}
+
+.stat .label {
+  Margin: 0;
+  Font-size: 0.75rem;
+  Color: var(--muted);
+}
+
+.stat .value {
+  Margin: 0.24rem 0 0;
+  Font-size: 1.03rem;
+  Font-weight: 700;
+}
+
+.section-title {
+  Margin: 1.45rem 0 0.7rem;
+  Font-size: 1rem;
+  Color: var(--muted);
+}
+
+.grid {
+  Display: grid;
+  Grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
+  Gap: 0.7rem;
+}
+
+.card {
+  Border: 1px solid var(--line);
+  Border-radius: 1rem;
+  Background: var(--panel);
+  Padding: 0.8rem;
+}
+
+.row-between {
+  Display: flex;
+  Align-items: baseline;
+  Justify-content: space-between;
+  Gap: 0.6rem;
+}
+
+H3 {
+  Margin: 0;
+  Font-size: 1rem;
+}
+
+.pill {
+  Font-size: 0.72rem;
+  Border-radius: 999px;
+  Padding: 0.2rem 0.55rem;
+  Background: var(--accent-soft);
+  Color: var(--accent);
+}
+
+.line {
+  Margin: 0.45rem 0 0;
+  Font-size: 0.91rem;
+}
+
+.tags {
+  Color: var(--muted);
+}
+
+.changePct.up {
+  Color: var(--up);
+}
+
+.changePct.down {
+  Color: var(--down);
+}
+
+.changePct.flat {
+  Color: var(--muted);
+}
+
+.sr-only {
+  Position: absolute;
+  Width: 1px;
+  Height: 1px;
+  Margin: -1px;
+  Clip: rect(0, 0, 0, 0);
+  Overflow: hidden;
+}
+
+.hidden {
+  Display: none;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    Width: 94vw;
+    Margin-top: 1rem;
+  }
+
+  .topbar {
+    Align-items: center;
+  }
+
+  .watchlist-form {
+    Grid-template-columns: 1fr;
+  }
+{
+
