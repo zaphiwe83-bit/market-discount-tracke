@@ -1,1091 +1,548 @@
-Const http = require(‘http’);
-Const fs = require(‘fs’);
-Const path = require(‘path’);
-Const { URL } = require(‘url’);
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { URL } = require('url');
 
-Const PORT = process.env.PORT || 8080;
-Const ROOT = __dirname;
-Const WATCHLIST_FILE = path.join(ROOT, ‘watchlist.json’);
-Const TWELVEDATA_API_KEY = process.env.TWELVEDATA_API_KEY || ‘’;
+const PORT = process.env.PORT || 8080;
+const ROOT = __dirname;
+const WATCHLIST_FILE = path.join(ROOT, 'watchlist.json');
+const TWELVEDATA_API_KEY = process.env.TWELVEDATA_API_KEY || '';
 
-Const MARKET_MAP = [
+const MARKET_MAP = [
   {
-    Symbol: ‘SPX500’,
-    Stooq: ‘^spx’,
-    Twelvedata: ‘GSPC:INDX’,
-    Market: ‘US’,
-    Name: ‘S&P 500 Index’,
-    Region: ‘United States’
+    symbol: 'SPX500',
+    stooq: '^spx',
+    twelvedata: 'GSPC:INDX',
+    market: 'US',
+    name: 'S&P 500 Index',
+    region: 'United States'
   },
   {
-    Symbol: ‘US30’,
-    Stooq: ‘^dji’,
-    Twelvedata: ‘DJI:INDX’,
-    Market: ‘US’,
-    Name: ‘Dow Jones 30 Index’,
-    Region: ‘United States’
+    symbol: 'US30',
+    stooq: '^dji',
+    twelvedata: 'DJI:INDX',
+    market: 'US',
+    name: 'Dow Jones 30 Index',
+    region: 'United States'
   },
   {
-    Symbol: ‘UK100’,
-    Stooq: ‘^ukx’,
-    Twelvedata: ‘FTSE:INDX’,
-    Market: ‘UK’,
-    Name: ‘FTSE 100 Index’,
-    Region: ‘United Kingdom’
+    symbol: 'UK100',
+    stooq: '^ukx',
+    twelvedata: 'FTSE:INDX',
+    market: 'UK',
+    name: 'FTSE 100 Index',
+    region: 'United Kingdom'
   },
   {
-    Symbol: ‘GER40’,
-    Stooq: ‘^dax’,
-    Twelvedata: ‘DAX:INDX’,
-    Market: ‘EU’,
-    Name: ‘DAX 40 Index’,
-    Region: ‘Germany’
+    symbol: 'GER40',
+    stooq: '^dax',
+    twelvedata: 'DAX:INDX',
+    market: 'EU',
+    name: 'DAX 40 Index',
+    region: 'Germany'
   },
   {
-    Symbol: ‘NAS100’,
-    Stooq: ‘^ndq’,
-    Twelvedata: ‘NDX:INDX’,
-    Market: ‘US’,
-    Name: ‘Nasdaq 100 Index’,
-    Region: ‘United States’
+    symbol: 'NAS100',
+    stooq: '^ndq',
+    twelvedata: 'NDX:INDX',
+    market: 'US',
+    name: 'Nasdaq 100 Index',
+    region: 'United States'
   },
   {
-    Symbol: ‘STRAIX’,
-    Stooq: null,
-    Twelvedata: null,
-    Market: ‘Global’,
-    Name: ‘Custom Strategy Basket’,
-    Region: ‘Multi-region’
+    symbol: 'STRAIX',
+    stooq: null,
+    twelvedata: null,
+    market: 'Global',
+    name: 'Custom Strategy Basket',
+    region: 'Multi-region'
   }
 ];
 
-Const DEFAULT_COMPANY_WATCHLIST = [
-  ‘Amazon’,
-  ‘Apple’,
-  ‘Nike’,
-  ‘Walmart’,
-  ‘Target’,
-  ‘Best Buy’,
-  ‘Samsung’,
-  ‘Adidas’,
-  ‘Booking.com’,
-  ‘Expedia’
+const DEFAULT_COMPANY_WATCHLIST = [
+  'Amazon',
+  'Apple',
+  'Nike',
+  'Walmart',
+  'Target',
+  'Best Buy',
+  'Samsung',
+  'Adidas',
+  'Booking.com',
+  'Expedia'
 ];
 
-Const MIME_TYPES = {
-  ‘.html’: ‘text/html; charset=utf-8’,
-  ‘.css’: ‘text/css; charset=utf-8’,
-  ‘.js’: ‘application/javascript; charset=utf-8’,
-  ‘.json’: ‘application/json; charset=utf-8’,
-  ‘.md’: ‘text/markdown; charset=utf-8’,
-  ‘.webmanifest’: ‘application/manifest+json; charset=utf-8’,
-  ‘.svg’: ‘image/svg+xml; charset=utf-8’
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.svg': 'image/svg+xml; charset=utf-8'
 };
 
-Function uniqueList(values) {
-  Return […new Set(values)];
+function uniqueList(values) {
+  return [...new Set(values)];
 }
 
-Function sanitizeCompany(raw) {
-  Return String(raw || ‘’)
+function sanitizeCompany(raw) {
+  return String(raw || '')
     .trim()
-    .replace(/\s+/g, ‘ ‘)
+    .replace(/\s+/g, ' ')
     .slice(0, 80);
 }
 
-Function loadWatchlist() {
-  Try {
-    If (!fs.existsSync(WATCHLIST_FILE)) {
-      Fs.writeFileSync(WATCHLIST_FILE, JSON.stringify(DEFAULT_COMPANY_WATCHLIST, null, 2));
-      Return […DEFAULT_COMPANY_WATCHLIST];
+function loadWatchlist() {
+  try {
+    if (!fs.existsSync(WATCHLIST_FILE)) {
+      fs.writeFileSync(WATCHLIST_FILE, JSON.stringify(DEFAULT_COMPANY_WATCHLIST, null, 2));
+      return [...DEFAULT_COMPANY_WATCHLIST];
     }
 
-    Const parsed = JSON.parse(fs.readFileSync(WATCHLIST_FILE, ‘utf8’));
-    If (!Array.isArray(parsed)) {
-      Throw new Error(‘Invalid watchlist format’);
+    const parsed = JSON.parse(fs.readFileSync(WATCHLIST_FILE, 'utf8'));
+    if (!Array.isArray(parsed)) {
+      throw new Error('Invalid watchlist format');
     }
 
-    Const cleaned = uniqueList(parsed.map(sanitizeCompany).filter(Boolean));
-    If (!cleaned.length) {
-      Return […DEFAULT_COMPANY_WATCHLIST];
+    const cleaned = uniqueList(parsed.map(sanitizeCompany).filter(Boolean));
+    if (!cleaned.length) {
+      return [...DEFAULT_COMPANY_WATCHLIST];
     }
 
-    Return cleaned;
+    return cleaned;
   } catch (_error) {
-    Return […DEFAULT_COMPANY_WATCHLIST];
+    return [...DEFAULT_COMPANY_WATCHLIST];
   }
 }
 
-Function saveWatchlist(list) {
-  Const cleaned = uniqueList(list.map(sanitizeCompany).filter(Boolean));
-  Fs.writeFileSync(WATCHLIST_FILE, JSON.stringify(cleaned, null, 2));
-  Return cleaned;
+function saveWatchlist(list) {
+  const cleaned = uniqueList(list.map(sanitizeCompany).filter(Boolean));
+  fs.writeFileSync(WATCHLIST_FILE, JSON.stringify(cleaned, null, 2));
+  return cleaned;
 }
 
-Let companyWatchlist = loadWatchlist();
+let companyWatchlist = loadWatchlist();
 
-Function parseStooqCsvRow(line) {
-  Const values = line.trim().split(‘,’);
-  If (values.length < 9) {
-    Return null;
+function parseStooqCsvRow(line) {
+  const values = line.trim().split(',');
+  if (values.length < 9) {
+    return null;
   }
 
-  Return {
-    Symbol: values[0],
-    Date: values[1],
-    Time: values[2],
-    Open: Number(values[3]),
-    High: Number(values[4]),
-    Low: Number(values[5]),
-    Close: Number(values[6]),
-    Volume: Number(values[7])
+  return {
+    symbol: values[0],
+    date: values[1],
+    time: values[2],
+    open: Number(values[3]),
+    high: Number(values[4]),
+    low: Number(values[5]),
+    close: Number(values[6]),
+    volume: Number(values[7])
   };
 }
 
-Function parseGoogleNewsItems(xml) {
-  Const items = [];
-  Const matches = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+function parseGoogleNewsItems(xml) {
+  const items = [];
+  const matches = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
 
-  For (const block of matches) {
-    Const title = decodeXml((block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || ‘’);
-    Const link = decodeXml((block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || ‘’);
-    Const pubDate = decodeXml((block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || ‘’);
-    Const source = decodeXml((block.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || ‘’);
+  for (const block of matches) {
+    const title = decodeXml((block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+    const link = decodeXml((block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '');
+    const pubDate = decodeXml((block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '');
+    const source = decodeXml((block.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || '');
 
-    If (!title || !link) {
-      Continue;
+    if (!title || !link) {
+      continue;
     }
 
-    Items.push({ title, link, pubDate, source });
+    items.push({ title, link, pubDate, source });
   }
 
-  Return items;
+  return items;
 }
 
-Function decodeXml(value) {
-  Return value
-    .replace(/&amp;/g, ‘&’)
-    .replace(/&quot;/g, ‘”’)
-    .replace(/&#39;/g, “’”)
-    .replace(/&lt;/g, ‘<’)
-    .replace(/&gt;/g, ‘>’);
+function decodeXml(value) {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
 }
 
-Function extractDiscountFromTitle(title) {
-  Const percent = title.match(/(\d{1,2})%\s*off/i);
-  If (percent) {
-    Return `${percent[1]}% off`;
+function extractDiscountFromTitle(title) {
+  const percent = title.match(/(\d{1,2})%\s*off/i);
+  if (percent) {
+    return `${percent[1]}% off`;
   }
 
-  Const money = title.match(/\$(\d{1,4})\s*off/i);
-  If (money) {
-    Return `$${money[1]} off`;
+  const money = title.match(/\$(\d{1,4})\s*off/i);
+  if (money) {
+    return `$${money[1]} off`;
   }
 
-  Const upTo = title.match(/save\s+up\s+to\s+(\d{1,2})%/i);
-  If (upTo) {
-    Return `Up to ${upTo[1]}% off`;
+  const upTo = title.match(/save\s+up\s+to\s+(\d{1,2})%/i);
+  if (upTo) {
+    return `Up to ${upTo[1]}% off`;
   }
 
-  Return ‘Deal live’;
+  return 'Deal live';
 }
 
-Function makeCodeFromTitle(title) {
-  Const explicitCode = title.match(/(?:code|coupon)\s*[:\-]?\s*([A-Z0-9]{4,12})/i);
-  If (explicitCode) {
-    Return explicitCode[1].toUpperCase();
+function makeCodeFromTitle(title) {
+  const explicitCode = title.match(/(?:code|coupon)\s*[:\-]?\s*([A-Z0-9]{4,12})/i);
+  if (explicitCode) {
+    return explicitCode[1].toUpperCase();
   }
 
-  Return ‘CHECK-LINK’;
+  return 'CHECK-LINK';
 }
 
-Function emptyMarketItem(item, status, provider) {
-  Return {
-    Symbol: item.symbol,
-    Market: item.market,
-    Name: item.name,
-    Region: item.region,
-    Status,
-    Provider,
-    Price: null,
+function emptyMarketItem(item, status, provider) {
+  return {
+    symbol: item.symbol,
+    market: item.market,
+    name: item.name,
+    region: item.region,
+    status,
+    provider,
+    price: null,
     changePct: null,
     updated: new Date().toISOString()
   };
 }
 
-Async function fetchMarketsFromStooq() {
-  Const tracked = MARKET_MAP.filter((item) => item.stooq);
-  Const responses = await Promise.allSettled(
-    Tracked.map(async (item) => {
-      Const url = `https://stooq.com/q/l/?s=${item.stooq}&i=d`;
-      Const response = await fetch(url, {
-        Headers: {
-          ‘User-Agent’: ‘market-discount-tracker/1.0’
+async function fetchMarketsFromStooq() {
+  const tracked = MARKET_MAP.filter((item) => item.stooq);
+  const responses = await Promise.allSettled(
+    tracked.map(async (item) => {
+      const url = `https://stooq.com/q/l/?s=${item.stooq}&i=d`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'market-discount-tracker/1.0'
         }
       });
 
-      If (!response.ok) {
-        Throw new Error(`Stooq request failed: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Stooq request failed: ${response.status}`);
       }
 
-      Const line = (await response.text()).trim();
-      Return parseStooqCsvRow(line);
+      const line = (await response.text()).trim();
+      return parseStooqCsvRow(line);
     })
   );
 
-  Const rows = responses
-    .filter((result) => result.status === ‘fulfilled’)
+  const rows = responses
+    .filter((result) => result.status === 'fulfilled')
     .map((result) => result.value)
     .filter(Boolean);
 
-  Const byStooq = new Map(rows.map((row) => [row.symbol.toLowerCase(), row]));
+  const byStooq = new Map(rows.map((row) => [row.symbol.toLowerCase(), row]));
 
-  Return MARKET_MAP.map((item) => {
-    If (!item.stooq) {
-      Return emptyMarketItem(item, ‘Monitoring’, ‘Custom’);
+  return MARKET_MAP.map((item) => {
+    if (!item.stooq) {
+      return emptyMarketItem(item, 'Monitoring', 'Custom');
     }
 
-    Const key = item.stooq.toLowerCase();
-    Const row = byStooq.get(key);
+    const key = item.stooq.toLowerCase();
+    const row = byStooq.get(key);
 
-    If (!row || Number.isNaN(row.close) || Number.isNaN(row.open)) {
-      Return emptyMarketItem(item, ‘Unavailable’, ‘Stooq’);
+    if (!row || Number.isNaN(row.close) || Number.isNaN(row.open)) {
+      return emptyMarketItem(item, 'Unavailable', 'Stooq');
     }
 
-    Const changePct = row.open === 0 ? 0 : ((row.close – row.open) / row.open) * 100;
+    const changePct = row.open === 0 ? 0 : ((row.close - row.open) / row.open) * 100;
 
-    Return {
-      Symbol: item.symbol,
-      Market: item.market,
-      Name: item.name,
-      Region: item.region,
-      Status: ‘Live’,
-      Provider: ‘Stooq’,
-      Price: row.close,
+    return {
+      symbol: item.symbol,
+      market: item.market,
+      name: item.name,
+      region: item.region,
+      status: 'Live',
+      provider: 'Stooq',
+      price: row.close,
       changePct: Number(changePct.toFixed(2)),
       updated: `${row.date} ${row.time} UTC`
     };
   });
 }
 
-Async function fetchMarketsFromTwelveData() {
-  If (!TWELVEDATA_API_KEY) {
-    Return null;
+async function fetchMarketsFromTwelveData() {
+  if (!TWELVEDATA_API_KEY) {
+    return null;
   }
 
-  Const tracked = MARKET_MAP.filter((item) => item.twelvedata);
-  Const responses = await Promise.allSettled(
-    Tracked.map(async (item) => {
-      Const url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(item.twelvedata)}&apikey=${encodeURIComponent(TWELVEDATA_API_KEY)}`;
-      Const response = await fetch(url, {
-        Headers: {
-          ‘User-Agent’: ‘market-discount-tracker/1.0’
+  const tracked = MARKET_MAP.filter((item) => item.twelvedata);
+  const responses = await Promise.allSettled(
+    tracked.map(async (item) => {
+      const url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(item.twelvedata)}&apikey=${encodeURIComponent(TWELVEDATA_API_KEY)}`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'market-discount-tracker/1.0'
         }
       });
 
-      If (!response.ok) {
-        Throw new Error(`TwelveData request failed: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`TwelveData request failed: ${response.status}`);
       }
 
-      Const payload = await response.json();
-      If (payload.status === ‘error’ || payload.code >= 400 || !payload.close) {
-        Throw new Error(payload.message || ‘Invalid TwelveData response’);
+      const payload = await response.json();
+      if (payload.status === 'error' || payload.code >= 400 || !payload.close) {
+        throw new Error(payload.message || 'Invalid TwelveData response');
       }
 
-      Return {
-        Symbol: item.symbol,
-        Market: item.market,
-        Name: item.name,
-        Region: item.region,
-        Status: ‘Live’,
-        Provider: ‘TwelveData’,
-        Price: Number(payload.close),
+      return {
+        symbol: item.symbol,
+        market: item.market,
+        name: item.name,
+        region: item.region,
+        status: 'Live',
+        provider: 'TwelveData',
+        price: Number(payload.close),
         changePct: Number(payload.percent_change || 0),
         updated: payload.datetime || new Date().toISOString()
       };
     })
   );
 
-  Const bySymbol = new Map(
-    Responses
-      .filter((result) => result.status === ‘fulfilled’)
+  const bySymbol = new Map(
+    responses
+      .filter((result) => result.status === 'fulfilled')
       .map((result) => [result.value.symbol, result.value])
   );
 
-  If (!bySymbol.size) {
-    Return null;
+  if (!bySymbol.size) {
+    return null;
   }
 
-  Return MARKET_MAP.map((item) => {
-    If (item.symbol === ‘STRAIX’) {
-      Return emptyMarketItem(item, ‘Monitoring’, ‘Custom’);
+  return MARKET_MAP.map((item) => {
+    if (item.symbol === 'STRAIX') {
+      return emptyMarketItem(item, 'Monitoring', 'Custom');
     }
 
-    Const found = bySymbol.get(item.symbol);
-    If (found) {
-      Return found;
+    const found = bySymbol.get(item.symbol);
+    if (found) {
+      return found;
     }
 
-    Return emptyMarketItem(item, ‘Unavailable’, ‘TwelveData’);
+    return emptyMarketItem(item, 'Unavailable', 'TwelveData');
   });
 }
 
-Async function fetchLiveMarkets() {
-  Const brokerData = await fetchMarketsFromTwelveData();
-  If (brokerData) {
-    Const fallback = await fetchMarketsFromStooq();
-    Const fallbackBySymbol = new Map(fallback.map((item) => [item.symbol, item]));
+async function fetchLiveMarkets() {
+  const brokerData = await fetchMarketsFromTwelveData();
+  if (brokerData) {
+    const fallback = await fetchMarketsFromStooq();
+    const fallbackBySymbol = new Map(fallback.map((item) => [item.symbol, item]));
 
-    Return brokerData.map((item) => {
-      If (item.status !== ‘Unavailable’) {
-        Return item;
+    return brokerData.map((item) => {
+      if (item.status !== 'Unavailable') {
+        return item;
       }
 
-      Const fallbackItem = fallbackBySymbol.get(item.symbol);
-      Return fallbackItem || item;
+      const fallbackItem = fallbackBySymbol.get(item.symbol);
+      return fallbackItem || item;
     });
   }
 
-  Return fetchMarketsFromStooq();
+  return fetchMarketsFromStooq();
 }
 
-Async function fetchCompanyCoupons(company) {
-  Const query = encodeURIComponent(`${company} coupon code OR promo code OR discount`);
-  Const url = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
+async function fetchCompanyCoupons(company) {
+  const query = encodeURIComponent(`${company} coupon code OR promo code OR discount`);
+  const url = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
 
-  Const response = await fetch(url, {
-    Headers: {
-      ‘User-Agent’: ‘market-discount-tracker/1.0’
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'market-discount-tracker/1.0'
     }
   });
 
-  If (!response.ok) {
-    Throw new Error(`Google News RSS failed for ${company}: ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`Google News RSS failed for ${company}: ${response.status}`);
   }
 
-  Const xml = await response.text();
-  Const items = parseGoogleNewsItems(xml).slice(0, 3);
+  const xml = await response.text();
+  const items = parseGoogleNewsItems(xml).slice(0, 3);
 
-  Return items.map((item) => ({
-    Company,
-    Category: ‘Live Feed’,
-    Code: makeCodeFromTitle(item.title),
-    Discount: extractDiscountFromTitle(item.title),
-    Expires: ‘Check source’,
-    Tags: [‘live’, ‘news’, ‘coupon’],
-    Source: item.source || ‘Google News’,
-    Title: item.title,
+  return items.map((item) => ({
+    company,
+    category: 'Live Feed',
+    code: makeCodeFromTitle(item.title),
+    discount: extractDiscountFromTitle(item.title),
+    expires: 'Check source',
+    tags: ['live', 'news', 'coupon'],
+    source: item.source || 'Google News',
+    title: item.title,
     url: item.link,
     publishedAt: item.pubDate
   }));
 }
 
-Async function fetchLiveCodes() {
-  Const results = await Promise.allSettled(companyWatchlist.map(fetchCompanyCoupons));
-  Const list = [];
+async function fetchLiveCodes() {
+  const results = await Promise.allSettled(companyWatchlist.map(fetchCompanyCoupons));
+  const list = [];
 
-  For (const result of results) {
-    If (result.status === ‘fulfilled’) {
-      List.push(…result.value);
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      list.push(...result.value);
     }
   }
 
-  If (list.length) {
-    Return list;
+  if (list.length) {
+    return list;
   }
 
-  Return [
+  return [
     {
-      Company: ‘Amazon’,
-      Category: ‘Fallback’,
-      Code: ‘CHECK-LINK’,
-      Discount: ‘Live source temporarily unavailable’,
-      Expires: ‘Check source’,
-      Tags: [‘fallback’],
-      Source: ‘Local fallback’,
-      Title: ‘No live feed currently available’,
-      url: ‘’,
+      company: 'Amazon',
+      category: 'Fallback',
+      code: 'CHECK-LINK',
+      discount: 'Live source temporarily unavailable',
+      expires: 'Check source',
+      tags: ['fallback'],
+      source: 'Local fallback',
+      title: 'No live feed currently available',
+      url: '',
       publishedAt: new Date().toUTCString()
     }
   ];
 }
 
-Function sendJson(res, statusCode, payload) {
-  Const body = JSON.stringify(payload);
-  Res.writeHead(statusCode, {
-    ‘Content-Type’: ‘application/json; charset=utf-8’,
-    ‘Cache-Control’: ‘no-store’
+function sendJson(res, statusCode, payload) {
+  const body = JSON.stringify(payload);
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store'
   });
-  Res.end(body);
+  res.end(body);
 }
 
-Function readJsonBody(req) {
-  Return new Promise((resolve, reject) => {
-    Let raw = ‘’;
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = '';
 
-    Req.on(‘data’, (chunk) => {
-      Raw += chunk;
-      If (raw.length > 1024 * 1024) {
-        Reject(new Error(‘Payload too large’));
+    req.on('data', (chunk) => {
+      raw += chunk;
+      if (raw.length > 1024 * 1024) {
+        reject(new Error('Payload too large'));
       }
     });
 
-    Req.on(‘end’, () => {
-      Try {
-        Resolve(raw ? JSON.parse(raw) : {});
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : {});
       } catch (_error) {
-        Reject(new Error(‘Invalid JSON body’));
+        reject(new Error('Invalid JSON body'));
       }
     });
 
-    Req.on(‘error’, () => {
-      Reject(new Error(‘Request stream error’));
+    req.on('error', () => {
+      reject(new Error('Request stream error'));
     });
   });
 }
 
-Async function handleApi(req, res, pathname) {
-  Try {
-    If (pathname === ‘/api/markets’ && req.method === ‘GET’) {
-      Const data = await fetchLiveMarkets();
-      Return sendJson(res, 200, { updatedAt: new Date().toISOString(), data });
+async function handleApi(req, res, pathname) {
+  try {
+    if (pathname === '/api/markets' && req.method === 'GET') {
+      const data = await fetchLiveMarkets();
+      return sendJson(res, 200, { updatedAt: new Date().toISOString(), data });
     }
 
-    If (pathname === ‘/api/codes’ && req.method === ‘GET’) {
-      Const data = await fetchLiveCodes();
-      Return sendJson(res, 200, { updatedAt: new Date().toISOString(), data });
+    if (pathname === '/api/codes' && req.method === 'GET') {
+      const data = await fetchLiveCodes();
+      return sendJson(res, 200, { updatedAt: new Date().toISOString(), data });
     }
 
-    If (pathname === ‘/api/watchlist’ && req.method === ‘GET’) {
-      Return sendJson(res, 200, { data: companyWatchlist });
+    if (pathname === '/api/watchlist' && req.method === 'GET') {
+      return sendJson(res, 200, { data: companyWatchlist });
     }
 
-    If (pathname === ‘/api/watchlist’ && req.method === ‘POST’) {
-      Const body = await readJsonBody(req);
-      Const company = sanitizeCompany(body.company);
+    if (pathname === '/api/watchlist' && req.method === 'POST') {
+      const body = await readJsonBody(req);
+      const company = sanitizeCompany(body.company);
 
-      If (!company) {
-        Return sendJson(res, 400, { error: ‘Company is required’ });
+      if (!company) {
+        return sendJson(res, 400, { error: 'Company is required' });
       }
 
-      Const exists = companyWatchlist.some((item) => item.toLowerCase() === company.toLowerCase());
-      If (!exists) {
-        companyWatchlist = saveWatchlist([…companyWatchlist, company]);
+      const exists = companyWatchlist.some((item) => item.toLowerCase() === company.toLowerCase());
+      if (!exists) {
+        companyWatchlist = saveWatchlist([...companyWatchlist, company]);
       }
 
-      Return sendJson(res, 200, { data: companyWatchlist });
+      return sendJson(res, 200, { data: companyWatchlist });
     }
 
-    If (pathname === ‘/api/watchlist’ && req.method === ‘DELETE’) {
-      Const body = await readJsonBody(req);
-      Const company = sanitizeCompany(body.company);
+    if (pathname === '/api/watchlist' && req.method === 'DELETE') {
+      const body = await readJsonBody(req);
+      const company = sanitizeCompany(body.company);
 
-      If (!company) {
-        Return sendJson(res, 400, { error: ‘Company is required’ });
+      if (!company) {
+        return sendJson(res, 400, { error: 'Company is required' });
       }
 
       companyWatchlist = saveWatchlist(
         companyWatchlist.filter((item) => item.toLowerCase() !== company.toLowerCase())
       );
-      Return sendJson(res, 200, { data: companyWatchlist });
+      return sendJson(res, 200, { data: companyWatchlist });
     }
 
-    Return sendJson(res, 404, { error: ‘Not found’ });
+    return sendJson(res, 404, { error: 'Not found' });
   } catch (error) {
-    Return sendJson(res, 500, { error: error.message || ‘Unexpected server error’ });
+    return sendJson(res, 500, { error: error.message || 'Unexpected server error' });
   }
 }
 
-Function serveStatic(req, res, pathname) {
-  Const localPath = pathname === ‘/’ ? ‘/index.html’ : pathname;
-  Const safePath = path.normalize(localPath).replace(/^\.\.(\/|\\|$)+/, ‘’);
-  Const filePath = path.join(ROOT, safePath);
+function serveStatic(req, res, pathname) {
+  const localPath = pathname === '/' ? '/index.html' : pathname;
+  const safePath = path.normalize(localPath).replace(/^\.\.(\/|\\|$)+/, '');
+  const filePath = path.join(ROOT, safePath);
 
-  If (!filePath.startsWith(ROOT)) {
-    Res.writeHead(403);
-    Res.end(‘Forbidden’);
-    Return;
+  if (!filePath.startsWith(ROOT)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
   }
 
-  Fs.readFile(filePath, (err, data) => {
-    If (err) {
-      Res.writeHead(404, { ‘Content-Type’: ‘text/plain; charset=utf-8’ });
-      Res.end(‘Not found’);
-      Return;
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
+      return;
     }
 
-    Const ext = path.extname(filePath).toLowerCase();
-    Const headers = {
-      ‘Content-Type’: MIME_TYPES[ext] || ‘application/octet-stream’
+    const ext = path.extname(filePath).toLowerCase();
+    const headers = {
+      'Content-Type': MIME_TYPES[ext] || 'application/octet-stream'
     };
 
-    If (pathname === ‘/sw.js’) {
-      Headers[‘Cache-Control’] = ‘no-cache’;
+    if (pathname === '/sw.js') {
+      headers['Cache-Control'] = 'no-cache';
     }
 
-    Res.writeHead(200, headers);
-    Res.end(data);
+    res.writeHead(200, headers);
+    res.end(data);
   });
 }
 
-Const server = http.createServer(async (req, res) => {
-  Const parsed = new URL(req.url, `http://${req.headers.host}`);
-  Const pathname = parsed.pathname;
+const server = http.createServer(async (req, res) => {
+  const parsed = new URL(req.url, `http://${req.headers.host}`);
+  const pathname = parsed.pathname;
 
-  If (pathname.startsWith(‘/api/’)) {
-    Await handleApi(req, res, pathname);
-    Return;
+  if (pathname.startsWith('/api/')) {
+    await handleApi(req, res, pathname);
+    return;
   }
 
   serveStatic(req, res, pathname);
 });
 
-Server.listen(PORT, () => {
-  Const provider = TWELVEDATA_API_KEY ? ‘TwelveData + Stooq fallback’ : ‘Stooq’;
-  Console.log(`Tracker app running at http://localhost:${PORT} (market provider: ${provider})`);
-});const http = require(‘http’);
-Const fs = require(‘fs’);
-Const path = require(‘path’);
-Const { URL } = require(‘url’);
-
-Const PORT = process.env.PORT || 8080;
-Const ROOT = __dirname;
-Const WATCHLIST_FILE = path.join(ROOT, ‘watchlist.json’);
-Const TWELVEDATA_API_KEY = process.env.TWELVEDATA_API_KEY || ‘’;
-
-Const MARKET_MAP = [
-  {
-    Symbol: ‘SPX500’,
-    Stooq: ‘^spx’,
-    Twelvedata: ‘GSPC:INDX’,
-    Market: ‘US’,
-    Name: ‘S&P 500 Index’,
-    Region: ‘United States’
-  },
-  {
-    Symbol: ‘US30’,
-    Stooq: ‘^dji’,
-    Twelvedata: ‘DJI:INDX’,
-    Market: ‘US’,
-    Name: ‘Dow Jones 30 Index’,
-    Region: ‘United States’
-  },
-  {
-    Symbol: ‘UK100’,
-    Stooq: ‘^ukx’,
-    Twelvedata: ‘FTSE:INDX’,
-    Market: ‘UK’,
-    Name: ‘FTSE 100 Index’,
-    Region: ‘United Kingdom’
-  },
-  {
-    Symbol: ‘GER40’,
-    Stooq: ‘^dax’,
-    Twelvedata: ‘DAX:INDX’,
-    Market: ‘EU’,
-    Name: ‘DAX 40 Index’,
-    Region: ‘Germany’
-  },
-  {
-    Symbol: ‘NAS100’,
-    Stooq: ‘^ndq’,
-    Twelvedata: ‘NDX:INDX’,
-    Market: ‘US’,
-    Name: ‘Nasdaq 100 Index’,
-    Region: ‘United States’
-  },
-  {
-    Symbol: ‘STRAIX’,
-    Stooq: null,
-    Twelvedata: null,
-    Market: ‘Global’,
-    Name: ‘Custom Strategy Basket’,
-    Region: ‘Multi-region’
-  }
-];
-
-Const DEFAULT_COMPANY_WATCHLIST = [
-  ‘Amazon’,
-  ‘Apple’,
-  ‘Nike’,
-  ‘Walmart’,
-  ‘Target’,
-  ‘Best Buy’,
-  ‘Samsung’,
-  ‘Adidas’,
-  ‘Booking.com’,
-  ‘Expedia’
-];
-
-Const MIME_TYPES = {
-  ‘.html’: ‘text/html; charset=utf-8’,
-  ‘.css’: ‘text/css; charset=utf-8’,
-  ‘.js’: ‘application/javascript; charset=utf-8’,
-  ‘.json’: ‘application/json; charset=utf-8’,
-  ‘.md’: ‘text/markdown; charset=utf-8’,
-  ‘.webmanifest’: ‘application/manifest+json; charset=utf-8’,
-  ‘.svg’: ‘image/svg+xml; charset=utf-8’
-};
-
-Function uniqueList(values) {
-  Return […new Set(values)];
-}
-
-Function sanitizeCompany(raw) {
-  Return String(raw || ‘’)
-    .trim()
-    .replace(/\s+/g, ‘ ‘)
-    .slice(0, 80);
-}
-
-Function loadWatchlist() {
-  Try {
-    If (!fs.existsSync(WATCHLIST_FILE)) {
-      Fs.writeFileSync(WATCHLIST_FILE, JSON.stringify(DEFAULT_COMPANY_WATCHLIST, null, 2));
-      Return […DEFAULT_COMPANY_WATCHLIST];
-    }
-
-    Const parsed = JSON.parse(fs.readFileSync(WATCHLIST_FILE, ‘utf8’));
-    If (!Array.isArray(parsed)) {
-      Throw new Error(‘Invalid watchlist format’);
-    }
-
-    Const cleaned = uniqueList(parsed.map(sanitizeCompany).filter(Boolean));
-    If (!cleaned.length) {
-      Return […DEFAULT_COMPANY_WATCHLIST];
-    }
-
-    Return cleaned;
-  } catch (_error) {
-    Return […DEFAULT_COMPANY_WATCHLIST];
-  }
-}
-
-Function saveWatchlist(list) {
-  Const cleaned = uniqueList(list.map(sanitizeCompany).filter(Boolean));
-  Fs.writeFileSync(WATCHLIST_FILE, JSON.stringify(cleaned, null, 2));
-  Return cleaned;
-}
-
-Let companyWatchlist = loadWatchlist();
-
-Function parseStooqCsvRow(line) {
-  Const values = line.trim().split(‘,’);
-  If (values.length < 9) {
-    Return null;
-  }
-
-  Return {
-    Symbol: values[0],
-    Date: values[1],
-    Time: values[2],
-    Open: Number(values[3]),
-    High: Number(values[4]),
-    Low: Number(values[5]),
-    Close: Number(values[6]),
-    Volume: Number(values[7])
-  };
-}
-
-Function parseGoogleNewsItems(xml) {
-  Const items = [];
-  Const matches = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
-
-  For (const block of matches) {
-    Const title = decodeXml((block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || ‘’);
-    Const link = decodeXml((block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || ‘’);
-    Const pubDate = decodeXml((block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || ‘’);
-    Const source = decodeXml((block.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || ‘’);
-
-    If (!title || !link) {
-      Continue;
-    }
-
-    Items.push({ title, link, pubDate, source });
-  }
-
-  Return items;
-}
-
-Function decodeXml(value) {
-  Return value
-    .replace(/&amp;/g, ‘&’)
-    .replace(/&quot;/g, ‘”’)
-    .replace(/&#39;/g, “’”)
-    .replace(/&lt;/g, ‘<’)
-    .replace(/&gt;/g, ‘>’);
-}
-
-Function extractDiscountFromTitle(title) {
-  Const percent = title.match(/(\d{1,2})%\s*off/i);
-  If (percent) {
-    Return `${percent[1]}% off`;
-  }
-
-  Const money = title.match(/\$(\d{1,4})\s*off/i);
-  If (money) {
-    Return `$${money[1]} off`;
-  }
-
-  Const upTo = title.match(/save\s+up\s+to\s+(\d{1,2})%/i);
-  If (upTo) {
-    Return `Up to ${upTo[1]}% off`;
-  }
-
-  Return ‘Deal live’;
-}
-
-Function makeCodeFromTitle(title) {
-  Const explicitCode = title.match(/(?:code|coupon)\s*[:\-]?\s*([A-Z0-9]{4,12})/i);
-  If (explicitCode) {
-    Return explicitCode[1].toUpperCase();
-  }
-
-  Return ‘CHECK-LINK’;
-}
-
-Function emptyMarketItem(item, status, provider) {
-  Return {
-    Symbol: item.symbol,
-    Market: item.market,
-    Name: item.name,
-    Region: item.region,
-    Status,
-    Provider,
-    Price: null,
-    changePct: null,
-    updated: new Date().toISOString()
-  };
-}
-
-Async function fetchMarketsFromStooq() {
-  Const tracked = MARKET_MAP.filter((item) => item.stooq);
-  Const responses = await Promise.allSettled(
-    Tracked.map(async (item) => {
-      Const url = `https://stooq.com/q/l/?s=${item.stooq}&i=d`;
-      Const response = await fetch(url, {
-        Headers: {
-          ‘User-Agent’: ‘market-discount-tracker/1.0’
-        }
-      });
-
-      If (!response.ok) {
-        Throw new Error(`Stooq request failed: ${response.status}`);
-      }
-
-      Const line = (await response.text()).trim();
-      Return parseStooqCsvRow(line);
-    })
-  );
-
-  Const rows = responses
-    .filter((result) => result.status === ‘fulfilled’)
-    .map((result) => result.value)
-    .filter(Boolean);
-
-  Const byStooq = new Map(rows.map((row) => [row.symbol.toLowerCase(), row]));
-
-  Return MARKET_MAP.map((item) => {
-    If (!item.stooq) {
-      Return emptyMarketItem(item, ‘Monitoring’, ‘Custom’);
-    }
-
-    Const key = item.stooq.toLowerCase();
-    Const row = byStooq.get(key);
-
-    If (!row || Number.isNaN(row.close) || Number.isNaN(row.open)) {
-      Return emptyMarketItem(item, ‘Unavailable’, ‘Stooq’);
-    }
-
-    Const changePct = row.open === 0 ? 0 : ((row.close – row.open) / row.open) * 100;
-
-    Return {
-      Symbol: item.symbol,
-      Market: item.market,
-      Name: item.name,
-      Region: item.region,
-      Status: ‘Live’,
-      Provider: ‘Stooq’,
-      Price: row.close,
-      changePct: Number(changePct.toFixed(2)),
-      updated: `${row.date} ${row.time} UTC`
-    };
-  });
-}
-
-Async function fetchMarketsFromTwelveData() {
-  If (!TWELVEDATA_API_KEY) {
-    Return null;
-  }
-
-  Const tracked = MARKET_MAP.filter((item) => item.twelvedata);
-  Const responses = await Promise.allSettled(
-    Tracked.map(async (item) => {
-      Const url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(item.twelvedata)}&apikey=${encodeURIComponent(TWELVEDATA_API_KEY)}`;
-      Const response = await fetch(url, {
-        Headers: {
-          ‘User-Agent’: ‘market-discount-tracker/1.0’
-        }
-      });
-
-      If (!response.ok) {
-        Throw new Error(`TwelveData request failed: ${response.status}`);
-      }
-
-      Const payload = await response.json();
-      If (payload.status === ‘error’ || payload.code >= 400 || !payload.close) {
-        Throw new Error(payload.message || ‘Invalid TwelveData response’);
-      }
-
-      Return {
-        Symbol: item.symbol,
-        Market: item.market,
-        Name: item.name,
-        Region: item.region,
-        Status: ‘Live’,
-        Provider: ‘TwelveData’,
-        Price: Number(payload.close),
-        changePct: Number(payload.percent_change || 0),
-        updated: payload.datetime || new Date().toISOString()
-      };
-    })
-  );
-
-  Const bySymbol = new Map(
-    Responses
-      .filter((result) => result.status === ‘fulfilled’)
-      .map((result) => [result.value.symbol, result.value])
-  );
-
-  If (!bySymbol.size) {
-    Return null;
-  }
-
-  Return MARKET_MAP.map((item) => {
-    If (item.symbol === ‘STRAIX’) {
-      Return emptyMarketItem(item, ‘Monitoring’, ‘Custom’);
-    }
-
-    Const found = bySymbol.get(item.symbol);
-    If (found) {
-      Return found;
-    }
-
-    Return emptyMarketItem(item, ‘Unavailable’, ‘TwelveData’);
-  });
-}
-
-Async function fetchLiveMarkets() {
-  Const brokerData = await fetchMarketsFromTwelveData();
-  If (brokerData) {
-    Const fallback = await fetchMarketsFromStooq();
-    Const fallbackBySymbol = new Map(fallback.map((item) => [item.symbol, item]));
-
-    Return brokerData.map((item) => {
-      If (item.status !== ‘Unavailable’) {
-        Return item;
-      }
-
-      Const fallbackItem = fallbackBySymbol.get(item.symbol);
-      Return fallbackItem || item;
-    });
-  }
-
-  Return fetchMarketsFromStooq();
-}
-
-Async function fetchCompanyCoupons(company) {
-  Const query = encodeURIComponent(`${company} coupon code OR promo code OR discount`);
-  Const url = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
-
-  Const response = await fetch(url, {
-    Headers: {
-      ‘User-Agent’: ‘market-discount-tracker/1.0’
-    }
-  });
-
-  If (!response.ok) {
-    Throw new Error(`Google News RSS failed for ${company}: ${response.status}`);
-  }
-
-  Const xml = await response.text();
-  Const items = parseGoogleNewsItems(xml).slice(0, 3);
-
-  Return items.map((item) => ({
-    Company,
-    Category: ‘Live Feed’,
-    Code: makeCodeFromTitle(item.title),
-    Discount: extractDiscountFromTitle(item.title),
-    Expires: ‘Check source’,
-    Tags: [‘live’, ‘news’, ‘coupon’],
-    Source: item.source || ‘Google News’,
-    Title: item.title,
-    url: item.link,
-    publishedAt: item.pubDate
-  }));
-}
-
-Async function fetchLiveCodes() {
-  Const results = await Promise.allSettled(companyWatchlist.map(fetchCompanyCoupons));
-  Const list = [];
-
-  For (const result of results) {
-    If (result.status === ‘fulfilled’) {
-      List.push(…result.value);
-    }
-  }
-
-  If (list.length) {
-    Return list;
-  }
-
-  Return [
-    {
-      Company: ‘Amazon’,
-      Category: ‘Fallback’,
-      Code: ‘CHECK-LINK’,
-      Discount: ‘Live source temporarily unavailable’,
-      Expires: ‘Check source’,
-      Tags: [‘fallback’],
-      Source: ‘Local fallback’,
-      Title: ‘No live feed currently available’,
-      url: ‘’,
-      publishedAt: new Date().toUTCString()
-    }
-  ];
-}
-
-Function sendJson(res, statusCode, payload) {
-  Const body = JSON.stringify(payload);
-  Res.writeHead(statusCode, {
-    ‘Content-Type’: ‘application/json; charset=utf-8’,
-    ‘Cache-Control’: ‘no-store’
-  });
-  Res.end(body);
-}
-
-Function readJsonBody(req) {
-  Return new Promise((resolve, reject) => {
-    Let raw = ‘’;
-
-    Req.on(‘data’, (chunk) => {
-      Raw += chunk;
-      If (raw.length > 1024 * 1024) {
-        Reject(new Error(‘Payload too large’));
-      }
-    });
-
-    Req.on(‘end’, () => {
-      Try {
-        Resolve(raw ? JSON.parse(raw) : {});
-      } catch (_error) {
-        Reject(new Error(‘Invalid JSON body’));
-      }
-    });
-
-    Req.on(‘error’, () => {
-      Reject(new Error(‘Request stream error’));
-    });
-  });
-}
-
-Async function handleApi(req, res, pathname) {
-  Try {
-    If (pathname === ‘/api/markets’ && req.method === ‘GET’) {
-      Const data = await fetchLiveMarkets();
-      Return sendJson(res, 200, { updatedAt: new Date().toISOString(), data });
-    }
-
-    If (pathname === ‘/api/codes’ && req.method === ‘GET’) {
-      Const data = await fetchLiveCodes();
-      Return sendJson(res, 200, { updatedAt: new Date().toISOString(), data });
-    }
-
-    If (pathname === ‘/api/watchlist’ && req.method === ‘GET’) {
-      Return sendJson(res, 200, { data: companyWatchlist });
-    }
-
-    If (pathname === ‘/api/watchlist’ && req.method === ‘POST’) {
-      Const body = await readJsonBody(req);
-      Const company = sanitizeCompany(body.company);
-
-      If (!company) {
-        Return sendJson(res, 400, { error: ‘Company is required’ });
-      }
-
-      Const exists = companyWatchlist.some((item) => item.toLowerCase() === company.toLowerCase());
-      If (!exists) {
-        companyWatchlist = saveWatchlist([…companyWatchlist, company]);
-      }
-
-      Return sendJson(res, 200, { data: companyWatchlist });
-    }
-
-    If (pathname === ‘/api/watchlist’ && req.method === ‘DELETE’) {
-      Const body = await readJsonBody(req);
-      Const company = sanitizeCompany(body.company);
-
-      If (!company) {
-        Return sendJson(res, 400, { error: ‘Company is required’ });
-      }
-
-      companyWatchlist = saveWatchlist(
-        companyWatchlist.filter((item) => item.toLowerCase() !== company.toLowerCase())
-      );
-      Return sendJson(res, 200, { data: companyWatchlist });
-    }
-
-    Return sendJson(res, 404, { error: ‘Not found’ });
-  } catch (error) {
-    Return sendJson(res, 500, { error: error.message || ‘Unexpected server error’ });
-  }
-}
-
-Function serveStatic(req, res, pathname) {
-  Const localPath = pathname === ‘/’ ? ‘/index.html’ : pathname;
-  Const safePath = path.normalize(localPath).replace(/^\.\.(\/|\\|$)+/, ‘’);
-  Const filePath = path.join(ROOT, safePath);
-
-  If (!filePath.startsWith(ROOT)) {
-    Res.writeHead(403);
-    Res.end(‘Forbidden’);
-    Return;
-  }
-
-  Fs.readFile(filePath, (err, data) => {
-    If (err) {
-      Res.writeHead(404, { ‘Content-Type’: ‘text/plain; charset=utf-8’ });
-      Res.end(‘Not found’);
-      Return;
-    }
-
-    Const ext = path.extname(filePath).toLowerCase();
-    Const headers = {
-      ‘Content-Type’: MIME_TYPES[ext] || ‘application/octet-stream’
-    };
-
-    If (pathname === ‘/sw.js’) {
-      Headers[‘Cache-Control’] = ‘no-cache’;
-    }
-
-    Res.writeHead(200, headers);
-    Res.end(data);
-  });
-}
-
-Const server = http.createServer(async (req, res) => {
-  Const parsed = new URL(req.url, `http://${req.headers.host}`);
-  Const pathname = parsed.pathname;
-
-  If (pathname.startsWith(‘/api/’)) {
-    Await handleApi(req, res, pathname);
-    Return;
-  }
-
-  serveStatic(req, res, pathname);
+server.listen(PORT, () => {
+  const provider = TWELVEDATA_API_KEY ? 'TwelveData + Stooq fallback' : 'Stooq';
+  console.log(`Tracker app running at http://localhost:${PORT} (market provider: ${provider})`);
 });
 
-Server.listen(PORT, () => {
-  Const provider = TWELVEDATA_API_KEY ? ‘TwelveData + Stooq fallback’ : ‘Stooq’;
-  Console.log(`Tracker app running at http://localhost:${PORT} (market provider: ${provider})`);
-});
+
