@@ -1,0 +1,13 @@
+{
+  “name”: “market-discount-tracker”,
+  “version”: “1.0.0”,
+  “private”: true,
+  “description”: “Live discount and market tracking PWA”,
+  “main”: “server.js”,
+  “scripts”: {
+    “start”: “node server.js”
+  },
+  “engines”: {
+    “node”: “>=20”
+   }
+} 
