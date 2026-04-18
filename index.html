@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Code & Discount Tracker</title>
+    <meta name="theme-color" content="#0a6847" />
+    <meta name="description" content="Track live discount deals and market symbols in one clean dashboard." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Unified Dashboard</p>
+          <h1>Codes + Market Watch</h1>
+        </div>
+        <button id="themeToggle" class="ghost-btn" aria-label="Toggle theme">Theme</button>
+      </header>
+
+      <section class="controls">
+        <div class="search-wrap">
+          <label for="searchInput" class="sr-only">Search companies, symbols, or tags</label>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search Amazon, SPX500, coupon tags..."
+            autocomplete="off"
+          />
+        </div>
+
+        <form id="watchlistForm" class="watchlist-form">
+          <label for="companyInput" class="sr-only">Add company to coupon watchlist</label>
+          <input
+            id="companyInput"
+            type="text"
+            placeholder="Add company (e.g. Costco, Zara, Microsoft)"
+            autocomplete="off"
+          />
+          <button type="submit" class="solid-btn">Add Company</button>
+        </form>
+
+        <div id="watchlistStatus" class="watchlist-status" aria-live="polite"></div>
+        <div id="watchlistChips" class="chips"></div>
+
+        <div class="tabs" role="tablist" aria-label="Data views">
+          <button class="tab is-active" data-view="all">All</button>
+          <button class="tab" data-view="codes">Codes</button>
+          <button class="tab" data-view="markets">Markets</button>
+        </div>
+      </section>
+
+      <section id="stats" class="stats"></section>
+
+      <section>
+        <h2 class="section-title">Discount Codes & Deals (Live Feed)</h2>
+        <div id="codesGrid" class="grid"></div>
+      </section>
+
+      <section>
+        <h2 class="section-title">Market Symbols (Live Feed)</h2>
+        <div id="marketsGrid" class="grid"></div>
+      </section>
+    </main>
+
+    <template id="codeCardTpl">
+      <article class="card code-card">
+        <div class="row-between">
+          <h3 class="company"></h3>
+          <span class="pill category"></span>
+        </div>
+        <p class="line"><strong>Code:</strong> <span class="code"></span></p>
+        <p class="line"><strong>Discount:</strong> <span class="discount"></span></p>
+        <p class="line"><strong>Expires:</strong> <span class="expires"></span></p>
+        <p class="line"><strong>Source:</strong> <span class="source"></span></p>
+        <p class="line headline"></p>
+        <p class="line"><a class="sourceLink" target="_blank" rel="noopener noreferrer"></a></p>
+        <p class="line tags"></p>
+      </article>
+    </template>
+
+    <template id="marketCardTpl">
+      <article class="card market-card">
+        <div class="row-between">
+          <h3 class="symbol"></h3>
+          <span class="pill market"></span>
+        </div>
+        <p class="line"><strong>Name:</strong> <span class="name"></span></p>
+        <p class="line"><strong>Region:</strong> <span class="region"></span></p>
+        <p class="line"><strong>Price:</strong> <span class="price"></span></p>
+        <p class="line"><strong>Change:</strong> <span class="changePct"></span></p>
+        <p class="line"><strong>Status:</strong> <span class="status"></span></p>
+        <p class="line"><strong>Provider:</strong> <span class="provider"></span></p>
+        <p class="line"><strong>Last Updated:</strong> <span class="updated"></span></p>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
