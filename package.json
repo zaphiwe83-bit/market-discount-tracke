@@ -11,3 +11,7 @@
     “node”: “>=20”
    }
 } 
+cd /root/market-discount-tracker
+git add package.json
+git commit -m "Fix package.json JSON syntax
+git push
